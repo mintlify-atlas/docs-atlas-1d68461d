@@ -1,0 +1,49 @@
+---
+title: "Rendón Burgers REST API overview"
+description: "A reference for all JSON endpoints in the Rendón Burgers order management system, covering orders, stock, and kitchen operations."
+---
+
+The Rendón Burgers API exposes a set of JSON endpoints used by the customer-facing menu, the kitchen dashboard, and internal operations. All JSON endpoints accept and return `application/json`. No authentication is required — the API is designed for use within the restaurant's internal network.
+
+## Base URL
+
+| Environment | URL |
+|---|---|
+| Development | `http://localhost:5000` |
+| Production | Depends on your deployment target |
+
+## Endpoints
+
+| Method | Path | Description | Returns |
+|---|---|---|---|
+| `GET` | `/api/stock` | Get inventory availability | JSON object mapping item IDs to booleans |
+| `POST` | `/ordenar` | Place a new order | `{ "status": "success", "id": <number> }` |
+| `GET` | `/estado/{id}` | Check order status by ID | `{ "status": string, "detalle": string }` |
+| `POST` | `/toggle_disponibilidad` | Toggle a menu item's availability | `{ "status": "success" }` |
+| `POST` | `/marcar_listo` | Dispatch an active order to history | `{ "status": "success" \| "error" }` |
+
+<Note>
+The routes `/`, `/cocina`, and `/reporte` return rendered HTML pages and are not part of the JSON API. They are not documented here.
+</Note>
+
+## Request and response format
+
+All POST endpoints expect a request body with `Content-Type: application/json`. All responses are `application/json`.
+
+## Authentication
+
+No authentication is required. The API is intended for internal restaurant use only and should not be exposed to the public internet in production without additional access controls.
+
+## Explore the API
+
+<CardGroup cols={3}>
+  <Card title="Orders" icon="receipt" href="/api/orders">
+    Place new orders and check their preparation status.
+  </Card>
+  <Card title="Stock" icon="box" href="/api/stock">
+    Read current inventory availability for all menu items.
+  </Card>
+  <Card title="Kitchen" icon="utensils" href="/api/kitchen">
+    Toggle item availability and dispatch completed orders.
+  </Card>
+</CardGroup>

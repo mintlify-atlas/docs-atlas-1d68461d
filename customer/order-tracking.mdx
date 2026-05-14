@@ -1,0 +1,82 @@
+---
+title: "Tracking your Rendón Burgers order in real time"
+description: "Understand how the order progress bar works, what each status stage means, and how the browser polls the backend to update tracking without a page refresh."
+---
+
+After you place an order, a progress tracker appears on the customer menu page. It shows you where your order stands — from the moment it enters the kitchen queue to the moment it is ready for pickup or out for delivery. The tracker updates automatically without requiring a page refresh.
+
+## How tracking works
+
+When an order is successfully submitted, the server responds with a numeric order ID. The frontend uses this ID to poll the `/estado/{id}` endpoint every 5 seconds and update the progress bar and status message based on the response.
+
+```javascript
+function rastrearPedido(id) {
+    const intervalo = setInterval(() => {
+        fetch(`/estado/${id}`).then(res => res.json()).then(data => {
+            const barra = document.getElementById('progreso-barra');
+            const mensaje = document.getElementById('track-mensaje');
+            if (data.status === 'preparando') {
+                barra.style.width = '60%';
+                mensaje.innerText = data.detalle;
+            } else if (data.status === 'listo') {
+                barra.style.width = '100%';
+                barra.classList.replace('bg-warning', 'bg-success');
+                mensaje.innerText = data.detalle;
+                clearInterval(intervalo);
+            }
+        });
+    }, 5000);
+}
+```
+
+The polling interval is cleared automatically when the order reaches the `listo` status, so no further requests are made after the order is complete.
+
+## Progress stages
+
+The progress bar moves through three stages as the order advances:
+
+<AccordionGroup>
+  <Accordion title="30% — Order placed" defaultOpen={true}>
+    The progress bar is set to 30% immediately after the order is submitted, before any polling response is received. The bar is yellow and animated, indicating the order has entered the queue and is awaiting preparation.
+  </Accordion>
+
+  <Accordion title="60% — Being prepared">
+    When `/estado/{id}` returns `"preparando"`, the bar advances to 60%. The status message updates to **Preparando...**, indicating kitchen staff have picked up the order.
+  </Accordion>
+
+  <Accordion title="100% — Ready">
+    When the status changes to `"listo"`, the bar fills to 100% and turns green. The message changes based on how the order was placed:
+
+    - **Home delivery (Domicilio):** "¡Tu orden está en camino! 🛵"
+    - **In-store pickup (Sucursal):** "¡Tu orden está lista para recoger! 🍔"
+
+    Polling stops at this point.
+  </Accordion>
+</AccordionGroup>
+
+## API status values
+
+The `GET /estado/{id}` endpoint returns a JSON object with two fields: `status` and `detalle`.
+
+| `status` value | Meaning | Progress |
+|----------------|---------|----------|
+| `"preparando"` | Order is in the active queue (`pedidos_activos`) | 60% |
+| `"listo"` | Order has been marked ready and moved to `historial_ventas` | 100% |
+| `"no_encontrado"` | Order ID not found in either collection | No change |
+
+The `detalle` field contains the human-readable message displayed below the progress bar.
+
+## Order ID
+
+The numeric order ID shown in the tracker is assigned by the server at the time of submission. It is calculated as the total number of orders placed today (across both `pedidos_activos` and `historial_ventas`) plus one, making it a sequential daily counter.
+
+```python
+total_hoy = pedidos_col.count_documents({"fecha": fecha_hoy}) + historial_col.count_documents({"fecha": fecha_hoy})
+nuevo_id = total_hoy + 1
+```
+
+This ID resets each day. It is displayed in the tracker so you can reference it if you need to ask staff about your order.
+
+<Warning>
+Tracking only works during the current browser session. If you refresh or close the page after placing an order, the progress tracker will not be restored. The order itself is not affected — it remains in the kitchen queue — but you will no longer be able to see its status from the browser.
+</Warning>

@@ -1,0 +1,133 @@
+---
+title: "Customizing the Rendón Burgers menu items"
+description: "Learn where menu items are defined in app.py, how each field works, how to add or remove items, and how images are resolved at render time."
+---
+
+All menu items are defined as a Python list of dictionaries named `menu_items` in `app.py`. The list is loaded once when the Flask server starts and passed to every page that renders the menu. To add, remove, or edit items, you modify this list directly and restart the server.
+
+## Menu item structure
+
+Each entry in `menu_items` is a dictionary with the following fields:
+
+<ParamField path="id" type="integer" required>
+  Unique numeric identifier for the item. Used as the cart key and as the lookup key in `inventario_stock`. Duplicate IDs break cart behavior and inventory toggling.
+</ParamField>
+
+<ParamField path="nombre" type="string" required>
+  Display name shown on the menu card and in order summaries.
+</ParamField>
+
+<ParamField path="precio" type="integer" required>
+  Price in Mexican pesos (MXN). Displayed as-is — no currency conversion is applied.
+</ParamField>
+
+<ParamField path="descripcion" type="string" required>
+  Short description shown below the item name on the menu card.
+</ParamField>
+
+<ParamField path="categoria" type="string" required>
+  Category the item belongs to. Controls which section the item appears in and which filter button activates it. Current values in use: `"hamburguesas"`, `"bebidas"`, `"desayunos"`.
+</ParamField>
+
+<ParamField path="imagen" type="string" required>
+  Image source. Either a full `https://` URL or a local filename relative to `static/img/`. Set to an empty string `""` to display a grey placeholder.
+</ParamField>
+
+## Adding a new menu item
+
+Append a new dictionary to `menu_items` in `app.py`. Choose an `id` that is not already used by any existing item.
+
+```python
+{"id": 27, "nombre": "Veggie Burger", "precio": 85, "descripcion": "Hamburguesa vegetariana con verduras asadas.", "categoria": "hamburguesas", "imagen": "https://example.com/veggie.jpg"}
+```
+
+<Warning>
+  Item IDs must be unique integers across the entire `menu_items` list. Duplicate IDs cause incorrect cart totals and unreliable inventory toggles, because both systems use the `id` as a lookup key.
+</Warning>
+
+<Tip>
+  After adding or removing menu items, restart the Flask server. The `menu_items` list is loaded once at startup and is not reloaded during a running session.
+</Tip>
+
+## How images are resolved
+
+The template in `index.html` applies the following logic when rendering each item's image:
+
+<Steps>
+  <Step title="Check if imagen starts with 'http'">
+    If the value starts with `http`, it is used directly as the `src` attribute of the `<img>` tag. Use this for externally hosted images.
+
+    ```python
+    # app.py
+    {"imagen": "https://example.com/burger.jpg"}
+    ```
+  </Step>
+  <Step title="Check if imagen is a local filename">
+    If the value is a plain filename (no protocol prefix), the template constructs the path using Flask's `url_for`:
+
+    ```
+    url_for('static', filename='img/' + item.imagen)
+    ```
+
+    Place the file in `static/img/` before referencing it:
+
+    ```python
+    # app.py
+    {"imagen": "my-burger.jpg"}
+    # → resolves to /static/img/my-burger.jpg
+    ```
+  </Step>
+  <Step title="Empty string fallback">
+    If `imagen` is an empty string `""`, the template renders a grey placeholder block in place of the image. No broken image icon is shown.
+
+    ```python
+    # app.py
+    {"imagen": ""}
+    ```
+  </Step>
+</Steps>
+
+## Categories
+
+The menu displays one category at a time. A row of buttons at the top of the page lets users switch between categories. The available buttons are generated from the distinct `categoria` values found in `menu_items`.
+
+<Note>
+  Adding an item with a new `categoria` value — for example, `"postres"` — automatically creates a new filter button and section for that category. No other configuration is required.
+</Note>
+
+## Removing a menu item
+
+Delete the dictionary for the item from `menu_items` and restart the server. Any documents in the `inventario_stock` MongoDB collection for that item's `id` will remain in the database but have no effect, since the item no longer exists in the menu list.
+
+## Current menu reference
+
+The table below lists all 26 items currently defined in `app.py`.
+
+| ID | Nombre | Precio | Categoría |
+|----|--------|--------|-----------|
+| 1 | Tradicional | $75 | hamburguesas |
+| 2 | Tradicional Doble | $120 | hamburguesas |
+| 3 | Arrachera | $100 | hamburguesas |
+| 4 | Crunchy | $95 | hamburguesas |
+| 5 | Crunchy Doble | $140 | hamburguesas |
+| 6 | Crunchy BBQ | $105 | hamburguesas |
+| 7 | Crunchy Búfalo | $105 | hamburguesas |
+| 8 | Ranchera | $140 | hamburguesas |
+| 9 | Suprema | $130 | hamburguesas |
+| 10 | Magnum | $160 | hamburguesas |
+| 11 | Orden de Papas | $50 | hamburguesas |
+| 12 | Coca Cola 600ml | $20 | bebidas |
+| 13 | Coca Cola 1 Litro | $30 | bebidas |
+| 14 | Jamaica Avia | $20 | bebidas |
+| 15 | Té Reca | $20 | bebidas |
+| 16 | Horchata Avia | $20 | bebidas |
+| 17 | Limonada Avia | $20 | bebidas |
+| 18 | Naranjada Avia | $25 | bebidas |
+| 19 | Tranca de Pierna | $45 | desayunos |
+| 20 | Orden 3 Hot Cakes | $45 | desayunos |
+| 21 | Hot Dog | $20 | desayunos |
+| 22 | Tranca de Pollo | $45 | desayunos |
+| 23 | Trancas de Tender | $45 | desayunos |
+| 24 | Orden de 3 Burritas | $30 | desayunos |
+| 25 | Orden de 4 Flautas | $45 | desayunos |
+| 26 | Tostadas de Pollo | $20 | desayunos |

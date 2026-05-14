@@ -1,0 +1,75 @@
+---
+title: "Stock API: check item availability"
+description: "Documentation for the GET /api/stock endpoint, which returns a map of menu item IDs to their current availability status in MongoDB."
+---
+
+The stock endpoint gives a real-time snapshot of which menu items are currently marked as unavailable in the `inventario_stock` collection. The customer-facing menu polls this endpoint every ten seconds and uses the result to hide unavailable items and dim their cards. Only items that have been explicitly toggled via `POST /toggle_disponibilidad` appear in the response.
+
+---
+
+## GET /api/stock
+
+Returns a flat JSON object mapping each tracked menu item's ID (as a string key) to its current availability (as a boolean value).
+
+### Request parameters
+
+None. This endpoint takes no query parameters, path parameters, or request body.
+
+### Response
+
+A JSON object where each key is a menu item ID (string) and each value is a boolean indicating whether the item is currently available.
+
+<ResponseField name="{item_id}" type="boolean">
+  Availability of the menu item with the given ID. `true` means available, `false` means unavailable.
+</ResponseField>
+
+<Note>
+Only items that have been explicitly toggled via `/toggle_disponibilidad` appear in this response. Items with no record in `inventario_stock` are treated as available (`true`) by the menu via Python's `dict.get` with a default of `True`. They will not appear as keys in this object.
+</Note>
+
+### Example
+
+**Request**
+
+```bash
+curl http://localhost:5000/api/stock
+```
+
+**Response**
+
+```json
+{
+  "1": true,
+  "2": false,
+  "4": true,
+  "11": false
+}
+```
+
+---
+
+## How the customer menu uses this endpoint
+
+The customer menu polls `/api/stock` every 10 seconds using `setInterval`. When an item's availability is `false`, its "Add to cart" button is hidden and the card is dimmed with reduced opacity. When availability is `true` (or the item is absent from the response), the button and full opacity are restored.
+
+```javascript
+setInterval(() => {
+    fetch('/api/stock').then(res => res.json()).then(inv => {
+        document.querySelectorAll('.btn-agregar').forEach(btn => {
+            const id = btn.getAttribute('data-product-id');
+            const card = btn.closest('.card');
+            if (inv[id] === false) {
+                btn.classList.add('d-none');
+                card.classList.add('opacity-50');
+            } else {
+                btn.classList.remove('d-none');
+                card.classList.remove('opacity-50');
+            }
+        });
+    });
+}, 10000);
+```
+
+<Tip>
+To change an item's availability, use the kitchen endpoint `POST /toggle_disponibilidad`. The updated state will be reflected in the next poll cycle.
+</Tip>

@@ -1,0 +1,123 @@
+---
+title: "Kitchen API: dispatch and inventory operations"
+description: "Documentation for the POST /toggle_disponibilidad and POST /marcar_listo endpoints used by kitchen staff to manage item availability and complete orders."
+---
+
+The kitchen endpoints are used by restaurant staff through the kitchen dashboard to manage the live state of the menu and order queue. `POST /toggle_disponibilidad` lets staff mark any menu item as unavailable or restore it, and `POST /marcar_listo` permanently moves a completed order from the active queue to the sales history.
+
+---
+
+## POST /toggle_disponibilidad
+
+Toggle a menu item's availability in the `inventario_stock` collection. If no record exists for the item, one is created with `disponible: false`. If a record already exists, its value is inverted.
+
+### Request body
+
+<ParamField body="id" type="integer" required>
+  The menu item ID to toggle. This must match the `item_id` used in the menu and cart.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string" required>
+  Always `"success"` when the toggle is applied.
+</ResponseField>
+
+### Behavior
+
+- If the item has **no existing record** in `inventario_stock`, a new document is inserted with `disponible: false`.
+- If the item **has an existing record**, the current `disponible` value is inverted (`true` → `false`, `false` → `true`).
+- The updated availability is immediately reflected in `GET /api/stock`.
+
+### Example
+
+**Request**
+
+```json
+{ "id": 4 }
+```
+
+**Response**
+
+```json
+{ "status": "success" }
+```
+
+**cURL**
+
+```bash
+curl -X POST http://localhost:5000/toggle_disponibilidad \
+  -H "Content-Type: application/json" \
+  -d '{"id": 4}'
+```
+
+---
+
+## POST /marcar_listo
+
+Mark an active order as complete. The order is moved from `pedidos_activos` to `historial_ventas` with a `fecha_finalizado` timestamp added.
+
+### Request body
+
+<ParamField body="id" type="integer" required>
+  The order ID to dispatch. Must correspond to an order currently in `pedidos_activos`.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string" required>
+  `"success"` if the order was found and dispatched. `"error"` if no order with the given ID exists in `pedidos_activos`.
+</ResponseField>
+
+### What this does
+
+<Steps>
+  <Step title="Find the order">
+    The order is looked up in `pedidos_activos` by its numeric `id`.
+  </Step>
+  <Step title="Add a completion timestamp">
+    A `fecha_finalizado` field is added to the order document with the current date and time in `YYYY-MM-DD HH:MM:SS` format.
+  </Step>
+  <Step title="Insert into history">
+    The updated order document is inserted into the `historial_ventas` collection.
+  </Step>
+  <Step title="Remove from active queue">
+    The order is deleted from `pedidos_activos`.
+  </Step>
+</Steps>
+
+<Warning>
+This operation is irreversible. Once an order is dispatched with `marcar_listo`, it is permanently moved to `historial_ventas` and will no longer appear in the kitchen queue. There is no undo.
+</Warning>
+
+### HTTP 404
+
+A `404` status is returned when the provided `id` does not match any order in `pedidos_activos`.
+
+### Examples
+
+**Request**
+
+```json
+{ "id": 3 }
+```
+
+**Success response**
+
+```json
+{ "status": "success" }
+```
+
+**Error response** (order not found)
+
+```json
+{ "status": "error" }
+```
+
+**cURL**
+
+```bash
+curl -X POST http://localhost:5000/marcar_listo \
+  -H "Content-Type: application/json" \
+  -d '{"id": 3}'
+```

@@ -1,0 +1,97 @@
+---
+title: "Browsing the Rendón Burgers digital menu"
+description: "Explore the customer-facing menu at /, switch between item categories, and understand how real-time stock availability is reflected in the UI."
+---
+
+The customer-facing menu is served at `/` and is the primary interface customers use to browse available items and compose an order. Items are organized into three categories — hamburguesas, bebidas, and desayunos — and each card displays a photo, the item name, a short description, and the price in Mexican pesos (MXN). Customers add items to their cart by clicking the **+ Agregar** button on any card.
+
+## Categories
+
+The menu is divided into three sections. Toggle between them using the category buttons at the top of the page:
+
+- **Hamburguesas** — Burgers and sides
+- **Bebidas** — Drinks
+- **Desayunos** — Breakfast items
+
+<Tip>
+Only one category is visible at a time. Click **Desayunos**, **Hamburguesas**, or **Bebidas** at the top of the page to switch between them.
+</Tip>
+
+## Hamburguesas
+
+| ID | Name | Price | Description |
+|----|------|-------|-------------|
+| 1 | Tradicional | $75 | Carne de la casa, jamón, queso, tocino y vegetales. |
+| 2 | Tradicional Doble | $120 | Doble carne, doble jamón, queso y tocino. |
+| 3 | Arrachera | $100 | Carne de arrachera, jamón, queso, tocino y vegetales. |
+| 4 | Crunchy | $95 | Pollo tender, jamón, queso, tocino y vegetales. |
+| 5 | Crunchy Doble | $140 | Doble pollo tender, jamón, queso y tocino. |
+| 6 | Crunchy BBQ | $105 | Pollo tender con aderezo BBQ. |
+| 7 | Crunchy Búfalo | $105 | Pollo tender con aderezo búfalo. |
+| 8 | Ranchera | $140 | Carne, jamón, queso, tocino, chorizo y champiñones. |
+| 9 | Suprema | $130 | Carne, jamón, queso, tocino, champiñones y queso fundido. |
+| 10 | Magnum | $160 | Carne, doble jamón, queso, tocino, arrachera y chorizo. |
+| 11 | Orden de Papas | $50 | Papas a la francesa con crema de ajo. |
+
+## Bebidas
+
+| ID | Name | Price | Description |
+|----|------|-------|-------------|
+| 12 | Coca Cola 600ml | $20 | Refresco de 600ml. |
+| 13 | Coca Cola 1 Litro | $30 | Refresco en botella de 1L. |
+| 14 | Jamaica Avia | $20 | Jamaica marca Avia. |
+| 15 | Té Reca | $20 | Té marca Reca. |
+| 16 | Horchata Avia | $20 | Horchata marca Avia. |
+| 17 | Limonada Avia | $20 | Limonada marca Avia. |
+| 18 | Naranjada Avia | $25 | Naranjada marca Avia. |
+
+## Desayunos
+
+| ID | Name | Price | Description |
+|----|------|-------|-------------|
+| 19 | Tranca de Pierna | $45 | Tranca de pierna estilo casero. |
+| 20 | Orden 3 Hot Cakes | $45 | Hot cakes con miel y mantequilla. |
+| 21 | Hot Dog | $20 | Hot dog clásico con aderezos. |
+| 22 | Tranca de Pollo | $45 | Tranca de pollo deshebrado. |
+| 23 | Trancas de Tender | $45 | Trancas de pollo tender crujiente. |
+| 24 | Orden de 3 Burritas | $30 | Burritas de guisado variado. |
+| 25 | Orden de 4 Flautas | $45 | Flautas doradas de pollo. |
+| 26 | Tostadas de Pollo | $20 | Tostada individual de pollo. |
+
+## Out-of-stock items
+
+When an item is unavailable, the menu updates automatically to reflect its status:
+
+- The item card becomes semi-transparent (`opacity-50`).
+- The **+ Agregar** button is hidden.
+- An **Agotado** badge appears on the card.
+
+Out-of-stock items cannot be added to the cart.
+
+## Real-time stock sync
+
+The menu polls the `/api/stock` endpoint every 10 seconds to keep availability up to date without requiring a page refresh. The stock check runs in the background using `setInterval`:
+
+```javascript
+setInterval(() => {
+    fetch('/api/stock').then(res => res.json()).then(inv => {
+        document.querySelectorAll('.btn-agregar').forEach(btn => {
+            const id = btn.getAttribute('data-product-id');
+            const card = btn.closest('.card');
+            if (inv[id] === false) {
+                btn.classList.add('d-none');
+                card.classList.add('opacity-50');
+            } else {
+                btn.classList.remove('d-none');
+                card.classList.remove('opacity-50');
+            }
+        });
+    });
+}, 10000);
+```
+
+The response from `/api/stock` is a JSON object keyed by item ID. A value of `false` means the item is out of stock; anything truthy means it is available. Card state is updated immediately after each poll.
+
+<Note>
+Stock availability is reflected in the UI automatically. You do not need to reload the page to see changes — the menu will update within 10 seconds of a stock change.
+</Note>

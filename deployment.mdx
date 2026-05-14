@@ -1,0 +1,71 @@
+---
+title: "Deploy Rendón Burgers to production"
+description: "Configure Gunicorn as the WSGI server, connect securely to MongoDB Atlas using environment variables, and prepare the app for a production environment."
+---
+
+Running Rendón Burgers in production requires two changes from the default development setup: replacing the Flask development server with Gunicorn, and securing the MongoDB Atlas connection string using environment variables instead of hardcoding it in source code.
+
+## Running with Gunicorn
+
+Gunicorn is the recommended WSGI server for running Flask applications in production. It is already included in `requirements.txt`.
+
+Start the server with multiple workers and bind it to all interfaces:
+
+```bash
+gunicorn app:app -w 4 -b 0.0.0.0:8000
+```
+
+- `-w 4` — Spawns four worker processes. A common starting point is `(2 × CPU cores) + 1`.
+- `-b 0.0.0.0:8000` — Binds the server to port 8000 on all network interfaces, making it accessible from outside the host machine.
+
+<Note>
+Set `debug=True` to `False` in `app.py` before running in production. The Flask development server's debug mode exposes an interactive debugger that must never be accessible in a production environment.
+</Note>
+
+## MongoDB Atlas connection
+
+The application connects to MongoDB Atlas using a `mongodb+srv://` URI. The URI format is:
+
+```
+mongodb+srv://<user>:<password>@<cluster>/<dbname>?appName=<app>
+```
+
+For this application, the database name is `rendon_burger_db`. The three collections used are:
+
+| Collection | Purpose |
+|---|---|
+| `pedidos_activos` | Active orders in progress |
+| `historial_ventas` | Completed order history |
+| `inventario_stock` | Item availability flags |
+
+<Warning>
+Never hardcode your Atlas credentials directly in `app.py`. If the file is committed to version control, the credentials will be exposed in the repository history. Use environment variables instead.
+</Warning>
+
+Read the connection URI from the environment at runtime:
+
+```python
+import os
+MONGO_URI = os.environ.get("MONGO_URI")
+```
+
+Set the variable in your deployment environment before starting the server:
+
+```bash
+export MONGO_URI="mongodb+srv://<user>:<password>@<cluster>/rendon_burger_db?appName=<app>"
+gunicorn app:app -w 4 -b 0.0.0.0:8000
+```
+
+On managed platforms (Railway, Render, Heroku, etc.), set `MONGO_URI` as a secret environment variable in the platform's dashboard rather than in a shell script.
+
+## Views and their URLs
+
+Once the server is running, the three application views are available at:
+
+| URL | View | Audience |
+|---|---|---|
+| `/` | Customer menu | Customers placing orders |
+| `/cocina` | Kitchen dashboard | Kitchen staff managing the order queue |
+| `/reporte` | Sales report | Management reviewing daily sales data |
+
+These routes are defined in `app.py` and do not require any additional configuration to function in production.

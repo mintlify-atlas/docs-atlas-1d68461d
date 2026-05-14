@@ -1,0 +1,140 @@
+---
+title: "Orders API: place and track burger orders"
+description: "Documentation for the /ordenar and /estado endpoints used to submit new customer orders and poll their current preparation status."
+---
+
+The orders endpoints handle the full customer order lifecycle — from submitting a cart to checking whether a delivery or pickup order is ready. Two endpoints cover this flow: `POST /ordenar` creates a new order and assigns it a daily sequential ID, and `GET /estado/{id}` lets customers poll the preparation status of their order in real time.
+
+---
+
+## POST /ordenar
+
+Place a new customer order. The order is inserted into the `pedidos_activos` collection and assigned a sequential ID based on the total number of orders placed today (both active and historical).
+
+### Request body
+
+<ParamField body="cliente" type="object" required>
+  Customer information object.
+
+  <Expandable title="properties">
+    <ParamField body="nombre" type="string" required>
+      Full name of the customer.
+    </ParamField>
+    <ParamField body="telefono" type="string" required>
+      Customer phone number.
+    </ParamField>
+    <ParamField body="tipo" type="string" required>
+      Order delivery type. Must be `"Sucursal"` (pickup) or `"Domicilio"` (delivery).
+    </ParamField>
+    <ParamField body="direccion" type="string" default="N/A">
+      Delivery address. Required when `tipo` is `"Domicilio"`. Defaults to `"N/A"` if omitted.
+    </ParamField>
+    <ParamField body="metodo_pago" type="string" default="Efectivo">
+      Payment method. Accepted values: `"Efectivo"` or `"Tarjeta"`. Defaults to `"Efectivo"`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="carrito" type="object[]" required>
+  List of items in the customer's cart. Each element represents one menu item.
+
+  <Expandable title="item properties">
+    <ParamField body="nombre" type="string" required>
+      Display name of the menu item.
+    </ParamField>
+    <ParamField body="precio" type="integer" required>
+      Unit price of the item in pesos.
+    </ParamField>
+    <ParamField body="cantidad" type="integer" required>
+      Number of units ordered.
+    </ParamField>
+    <ParamField body="item_id" type="integer" required>
+      Unique identifier of the menu item.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string" required>
+  Always `"success"` on a successful order submission.
+</ResponseField>
+
+<ResponseField name="id" type="integer" required>
+  The sequential order number assigned to this order for the current day.
+</ResponseField>
+
+<Note>
+The order ID is calculated as the count of all orders placed today (across both `pedidos_activos` and `historial_ventas`) plus one. IDs reset each day and are not globally unique across dates.
+</Note>
+
+### Example
+
+**Request**
+
+```json
+{
+  "cliente": {
+    "nombre": "Ana García",
+    "telefono": "9811234567",
+    "tipo": "Domicilio",
+    "direccion": "Calle 20 #45, Campeche",
+    "metodo_pago": "Efectivo"
+  },
+  "carrito": [
+    { "nombre": "Tradicional", "precio": 75, "cantidad": 2, "item_id": 1 },
+    { "nombre": "Coca Cola 600ml", "precio": 20, "cantidad": 2, "item_id": 12 }
+  ]
+}
+```
+
+**Response**
+
+```json
+{ "status": "success", "id": 3 }
+```
+
+---
+
+## GET /estado/{id}
+
+Check the current preparation status of an order using its numeric ID.
+
+### Path parameters
+
+<ParamField path="id" type="integer" required>
+  The order ID returned by `POST /ordenar`.
+</ParamField>
+
+### Response
+
+<ResponseField name="status" type="string" required>
+  Current state of the order. One of: `"preparando"`, `"listo"`, or `"no_encontrado"`.
+</ResponseField>
+
+<ResponseField name="detalle" type="string" required>
+  Human-readable message describing the order state.
+</ResponseField>
+
+### Possible responses
+
+| `status` | `detalle` | Meaning |
+|---|---|---|
+| `"preparando"` | `"Preparando..."` | Order is in `pedidos_activos` — still being prepared |
+| `"listo"` | `"¡Tu orden está en camino! 🛵"` | Order was dispatched as a `Domicilio` delivery |
+| `"listo"` | `"¡Tu orden está lista para recoger! 🍔"` | Order was dispatched as a `Sucursal` pickup |
+| `"no_encontrado"` | `"Buscando..."` | ID was not found in either collection |
+
+### Example
+
+**Request**
+
+```bash
+curl http://localhost:5000/estado/3
+```
+
+**Response**
+
+```json
+{ "status": "preparando", "detalle": "Preparando..." }
+```

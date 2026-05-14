@@ -1,0 +1,50 @@
+---
+title: "Rendón Burgers: what it is and how it works"
+description: "A full-stack Flask and MongoDB order management system for burger restaurants, covering the customer menu, kitchen dashboard, and daily sales reporting."
+---
+
+Rendón Burgers is a web application that manages the full order lifecycle of a burger restaurant — from a customer placing an order to the kitchen preparing it and a manager reviewing daily sales. It is built with Flask on the backend, MongoDB Atlas as the database, and Bootstrap 5 for the frontend interface.
+
+## Application views
+
+The system exposes three main views, each serving a distinct role in restaurant operations.
+
+**Customer menu (`/`)** — The page customers interact with directly. It displays available items across three categories (hamburguesas, bebidas, and desayunos), lets customers compose an order, and submits it to the kitchen queue.
+
+**Kitchen dashboard (`/cocina`)** — The internal view used by kitchen staff. It lists all active orders from the `pedidos_activos` collection and allows staff to mark orders as ready, which moves them to the `historial_ventas` collection.
+
+**Sales report (`/reporte`)** — A management view showing completed orders pulled from `historial_ventas`. It provides a summary of daily sales activity.
+
+## Explore the docs
+
+<CardGroup cols={2}>
+  <Card title="Customer menu" icon="utensils" href="/customer/menu">
+    How the customer-facing menu works, including item categories and order submission.
+  </Card>
+  <Card title="Kitchen view" icon="bell-concierge" href="/operations/kitchen-view">
+    How kitchen staff manage the active order queue and mark orders as complete.
+  </Card>
+  <Card title="Sales report" icon="chart-bar" href="/operations/sales-report">
+    How the daily sales report is generated from completed order history.
+  </Card>
+  <Card title="API overview" icon="code" href="/api/overview">
+    Reference for the JSON endpoints used by the frontend, including stock and availability.
+  </Card>
+</CardGroup>
+
+## Tech stack
+
+| Layer | Technology |
+|---|---|
+| Web framework | Flask (Python) |
+| Database driver | PyMongo |
+| Database | MongoDB Atlas |
+| Frontend CSS | Bootstrap 5 |
+| Toast notifications | SweetAlert2 |
+| Production server | Gunicorn |
+
+Flask handles all routing and server-side logic. PyMongo connects the application to MongoDB Atlas, where all orders and inventory state are stored. Bootstrap 5 and SweetAlert2 are loaded on the frontend to provide a responsive interface and real-time feedback toasts.
+
+<Note>
+MongoDB Atlas is required to run this application. The app does not support a local MongoDB instance by default — you must supply a valid `mongodb+srv://` connection URI pointing to an Atlas cluster before starting the server.
+</Note>

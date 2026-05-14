@@ -1,0 +1,59 @@
+---
+title: "Using the Rendón Burgers kitchen dashboard"
+description: "Learn how to monitor active orders, dispatch them to history, and navigate the real-time kitchen view at /cocina."
+---
+
+The kitchen dashboard at `/cocina` is the primary screen for back-of-house staff. It displays all active orders as individual tickets on a dark background, arranged in a three-column grid ordered from oldest to newest. Staff use this view to track what needs to be prepared and to mark orders as complete when they are ready for pickup or delivery.
+
+## Accessing the kitchen view
+
+Open a browser and navigate to `/cocina`. No login is required — the page is intended for internal kitchen use only.
+
+<Info>
+  The kitchen view also contains the inventory control panel at the bottom of the page, where you can mark items as available or out of stock. See [Managing inventory from the kitchen dashboard](/operations/inventory) for details.
+</Info>
+
+## Reading order tickets
+
+Each active order appears as a ticket card with a red top border. Tickets are sorted by the time the order was placed — the oldest order appears first (top-left), so the most urgent orders are always at the top.
+
+Every ticket displays the following information:
+
+<CardGroup cols={2}>
+  <Card title="Order identity" icon="hash">
+    The order number in large bold text, delivery type (Sucursal or Domicilio), and payment method displayed as a badge.
+  </Card>
+  <Card title="Customer details" icon="user">
+    The customer's name and phone number, followed by a line-by-line list of items with quantities (e.g., `2x Tradicional`).
+  </Card>
+</CardGroup>
+
+## Dispatching an order
+
+When an order is fully prepared and ready to hand off, click the **DESPACHAR** button on the ticket.
+
+<Steps>
+  <Step title="Locate the ticket">
+    Find the order in the grid. Tickets are sorted oldest-first, so completed orders are typically near the top-left.
+  </Step>
+  <Step title="Click DESPACHAR">
+    Press the green **DESPACHAR** button at the bottom of the ticket. This sends a `POST` request to `/marcar_listo` with the order ID.
+  </Step>
+  <Step title="Order moves to history">
+    The server copies the order to the `historial_ventas` collection with a `fecha_finalizado` timestamp, then deletes it from `pedidos_activos`. The page reloads automatically to reflect the updated queue.
+  </Step>
+</Steps>
+
+<Warning>
+  Dispatching an order cannot be undone. Once you click **DESPACHAR**, the order is permanently moved to `historial_ventas` and removed from the active queue. Verify the order is complete before dispatching.
+</Warning>
+
+## Auto-refresh
+
+The kitchen view refreshes automatically every 30 seconds using an HTTP meta refresh tag. You do not need to manually reload the page — new orders placed by customers will appear on their own within the next refresh cycle.
+
+```html meta tag
+<meta http-equiv="refresh" content="30" />
+```
+
+If you need to see the latest state immediately after dispatching an order, the page also reloads automatically after each dispatch action.

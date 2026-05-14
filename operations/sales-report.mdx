@@ -1,0 +1,77 @@
+---
+title: "Viewing daily sales reports for Rendón Burgers"
+description: "Access the daily sales report at /reporte to review total revenue, completed order count, and a full breakdown of dispatched orders."
+---
+
+The sales report at `/reporte` gives an at-a-glance summary of the restaurant's performance for the current calendar day. It displays total revenue and a count of completed orders at the top, followed by a detailed table of every dispatched order. Orders appear in this report only after kitchen staff click **DESPACHAR** from the kitchen view.
+
+## Accessing the report
+
+Navigate to `/reporte` in a browser. The page loads current-day data automatically — no date selection is required.
+
+A link back to the kitchen dashboard (`/cocina`) is available at the top of the page.
+
+## What the report shows
+
+<CardGroup cols={2}>
+  <Card title="Ventas Totales" icon="peso-sign">
+    The total revenue for the current day in MXN, calculated as the sum of each completed order's `total` field.
+  </Card>
+  <Card title="Órdenes Finalizadas" icon="receipt">
+    The number of orders dispatched today, equal to the number of records in `historial_ventas` with today's date.
+  </Card>
+</CardGroup>
+
+Below the stat cards, a table lists every completed order for the day in reverse chronological order (newest first).
+
+## Order table columns
+
+<AccordionGroup>
+  <Accordion title="ID">
+    The unique order number assigned when the customer placed the order.
+  </Accordion>
+  <Accordion title="Hora Pedido">
+    The time the order was originally placed by the customer.
+  </Accordion>
+  <Accordion title="Hora Entrega">
+    The time the order was dispatched by kitchen staff — stored as `fecha_finalizado` when **DESPACHAR** is clicked.
+  </Accordion>
+  <Accordion title="Productos">
+    The list of items in the order with quantities, as originally submitted by the customer.
+  </Accordion>
+  <Accordion title="Monto">
+    The total amount charged for the order in MXN.
+  </Accordion>
+</AccordionGroup>
+
+## How revenue is calculated
+
+Each order's total is computed from its individual line items when the order is placed. The report sums the `total` field across all completed orders for the day.
+
+```python sales report route
+fecha_hoy = datetime.now().strftime("%Y-%m-%d")
+ventas = list(historial_col.find({"fecha": fecha_hoy}))
+total_dinero = sum(v['total'] for v in ventas)
+```
+
+<Info>
+  The `total` for each order reflects the sum of `precio × cantidad` for all items in that order, as set at the time of ordering.
+</Info>
+
+## How orders get into the report
+
+Orders move from the active queue to the sales report in a single step: when a kitchen staff member clicks **DESPACHAR** on a ticket in `/cocina`. At that moment, the order is copied to `historial_ventas` with a `fecha_finalizado` timestamp and removed from `pedidos_activos`.
+
+See [Using the Rendón Burgers kitchen dashboard](/operations/kitchen-view) for details on the dispatch process.
+
+## When there are no sales
+
+If no orders have been dispatched yet for the current day, the report displays the following message in place of the table:
+
+> Aún no hay ventas registradas en el historial.
+
+The stat cards will show MXN $0 and 0 completed orders.
+
+<Note>
+  The report resets at midnight each calendar day. It only shows orders where the `fecha` field matches today's date. Orders from previous days are stored in `historial_ventas` but are not included in this view.
+</Note>

@@ -1,0 +1,95 @@
+---
+title: "Connecting Rendón Burgers to MongoDB Atlas"
+description: "Learn how Rendón Burgers connects to MongoDB Atlas, what collections are used, and how to configure your connection string securely."
+---
+
+Rendón Burgers uses [MongoDB Atlas](https://www.mongodb.com/atlas) as its database backend. The Flask app connects to a single Atlas cluster at startup via `pymongo`, and all order data, sales history, and inventory availability are persisted across three dedicated collections in the `rendon_burger_db` database.
+
+## Collections
+
+The app uses three collections, each with a distinct responsibility:
+
+<CardGroup cols={3}>
+  <Card title="pedidos_activos" icon="clock">
+    Stores in-progress orders that are currently being prepared or awaiting dispatch.
+  </Card>
+  <Card title="historial_ventas" icon="receipt">
+    Stores completed orders once they are dispatched. Acts as a permanent sales log.
+  </Card>
+  <Card title="inventario_stock" icon="box">
+    Stores per-item availability flags. Each document tracks whether a menu item is currently available for ordering.
+  </Card>
+</CardGroup>
+
+### Inventory document format
+
+Each document in `inventario_stock` follows this structure:
+
+```json
+{ "item_id": "1", "disponible": true }
+```
+
+The `item_id` field is a string matching the `id` of the menu item. The `disponible` field is a boolean — `true` means the item is available, `false` means it is hidden from the ordering interface.
+
+<Note>
+  If no document exists in `inventario_stock` for a given menu item, the app defaults to `True` (available). The fallback is `inventario.get(str(item['id']), True)`. Toggling an item off creates the document and sets `disponible` to `false`.
+</Note>
+
+## Configuring the connection
+
+The connection is established in `app.py` using the `MONGO_URI` environment variable or a hardcoded fallback.
+
+### Connection string format
+
+```
+mongodb+srv://<user>:<password>@<cluster>/?appName=<app>
+```
+
+The database name is `rendon_burger_db` and is set directly in the `MongoClient` call:
+
+```python
+client = MongoClient(MONGO_URI)
+db = client['rendon_burger_db']
+```
+
+### Recommended: load from environment variable
+
+<Warning>
+  The current `app.py` contains a hardcoded `MONGO_URI` with credentials. Do not commit this string to version control. Use an environment variable instead.
+</Warning>
+
+Replace the hardcoded URI with the following pattern:
+
+```python
+import os
+from pymongo import MongoClient
+
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb+srv://...")
+client = MongoClient(MONGO_URI)
+db = client['rendon_burger_db']
+```
+
+Set the environment variable before running the app:
+
+```bash
+export MONGO_URI="mongodb+srv://<user>:<password>@<cluster>/?appName=<app>"
+python app.py
+```
+
+<Note>
+  MongoDB Atlas free tier (M0) is sufficient for a small restaurant deployment. It supports up to 512 MB of storage and handles the low read/write volume typical of a single-location order system.
+</Note>
+
+## Frequently asked questions
+
+<AccordionGroup>
+  <Accordion title="What if a collection doesn't exist?">
+    MongoDB creates collections automatically on the first insert. You do not need to create `pedidos_activos`, `historial_ventas`, or `inventario_stock` manually — they appear as soon as the app writes to them.
+  </Accordion>
+  <Accordion title="Why is my item shown as available by default?">
+    If no document exists in `inventario_stock` for a menu item, the app uses `inventario.get(str(item['id']), True)`, which returns `True` when the key is missing. Items are only hidden after you explicitly toggle them off, which creates the document with `"disponible": false`.
+  </Accordion>
+  <Accordion title="What is the inventario_stock document format?">
+    Each document contains two fields: `item_id` (a string matching the menu item's numeric `id`) and `disponible` (a boolean). Example: `{"item_id": "1", "disponible": true}`.
+  </Accordion>
+</AccordionGroup>

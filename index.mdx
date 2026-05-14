@@ -1,133 +1,63 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
-icon: 'star'
+title: "Rendón Burgers: Restaurant Order Management System"
+description: "Rendón Burgers is a full-stack web app for managing burger restaurant orders, kitchen workflow, inventory, and daily sales reporting."
 ---
 
-## Setting up
+Welcome to the Rendón Burgers documentation. This system powers the complete order lifecycle for a burger restaurant — from the customer-facing digital menu through to kitchen dispatch and end-of-day sales reporting. The application is built with Flask and MongoDB Atlas, and runs entirely in the browser with no app installation required for customers.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Get the application running locally in minutes with Flask and MongoDB Atlas.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="Customer Menu" icon="burger" href="/customer/menu">
+    Explore the digital menu with 26 items across hamburgers, breakfasts, and drinks.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Kitchen Dashboard" icon="fire" href="/operations/kitchen-view">
+    Learn how the kitchen view displays live orders and manages dispatch.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="API Reference" icon="code" href="/api/overview">
+    Explore all REST endpoints for orders, stock, and kitchen operations.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## How it works
 
-Everything you need to create world-class documentation.
+Rendón Burgers connects three roles — customers, kitchen staff, and managers — through a single web application with dedicated views for each.
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
-  </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
-  </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
-  </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
-  </Card>
-</Columns>
+<Steps>
+  <Step title="Customer browses the menu">
+    Customers visit the main page to see the digital menu organized by category. Items marked as out-of-stock are automatically hidden based on real-time inventory data.
+  </Step>
+  <Step title="Customer places an order">
+    After adding items to the cart, the customer fills in their name, phone number, delivery preference (pickup or home delivery), and payment method. The order is submitted to the kitchen instantly.
+  </Step>
+  <Step title="Kitchen prepares and dispatches">
+    Kitchen staff see the incoming order on the kitchen dashboard as a ticket. Once prepared, they click **Despachar** to mark it complete and move it to the sales history.
+  </Step>
+  <Step title="Customer tracks their order">
+    A live progress tracker on the menu page updates automatically, letting the customer know when their order is being prepared and when it is ready.
+  </Step>
+</Steps>
 
-## Make your content agent ready
+## Key features
 
-Make your docs work for humans and AI agents alike.
-
-<Columns cols={2}>
-  <Card
-    title="Prompt component"
-    icon="robot"
-    href="/agent-ready/prompt"
-  >
-    Embed shareable AI prompts readers can copy or open in Cursor.
+<CardGroup cols={2}>
+  <Card title="Digital menu" icon="list" href="/customer/menu">
+    26 menu items across hamburgers, breakfasts, and drinks — with photos and prices.
   </Card>
-  <Card
-    title="Visibility"
-    icon="eye"
-    href="/agent-ready/visibility"
-  >
-    Show different content to humans and agents reading your docs.
+  <Card title="Real-time cart" icon="cart-shopping" href="/customer/ordering">
+    Add, remove, and adjust quantities with instant total calculation.
   </Card>
-  <Card
-    title="Contextual menu"
-    icon="bolt"
-    href="/agent-ready/contextual"
-  >
-    Give readers one-click access to Claude, ChatGPT, Cursor, and more.
+  <Card title="Order tracking" icon="location-dot" href="/customer/order-tracking">
+    Live progress bar polling order status every 5 seconds.
   </Card>
-  <Card
-    title="AI coding tools"
-    icon="wand-magic-sparkles"
-    href="/ai-tools/claude-code"
-  >
-    Set up Claude Code, Cursor, or Windsurf with Mintlify's skill.
+  <Card title="Inventory control" icon="boxes-stacked" href="/operations/inventory">
+    Toggle per-item availability from the kitchen dashboard.
   </Card>
-</Columns>
-
-## Need inspiration?
-
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+  <Card title="Sales reporting" icon="chart-bar" href="/operations/sales-report">
+    Daily revenue totals and itemized order history.
+  </Card>
+  <Card title="REST API" icon="server" href="/api/overview">
+    JSON endpoints for orders, stock, and kitchen operations.
+  </Card>
+</CardGroup>

@@ -1,0 +1,76 @@
+---
+title: "Managing inventory from the kitchen dashboard"
+description: "Control which menu items are available to customers by toggling stock status directly from the kitchen view at /cocina."
+---
+
+Inventory management in Rendón Burgers is handled directly from the kitchen dashboard, without a separate admin panel. Kitchen staff can mark any of the 26 menu items as available or out of stock in real time, and the customer-facing menu updates automatically to reflect those changes.
+
+## Where to find inventory controls
+
+Scroll to the bottom of `/cocina` to find the **CONTROL DE INVENTARIO** section. It appears below the order ticket grid, inside a dark panel with a red border.
+
+Each menu item has its own toggle button displaying the item's name and its current stock status.
+
+## Understanding the toggle buttons
+
+<CardGroup cols={2}>
+  <Card title="HAY — item available" icon="circle-check">
+    The button is styled in green (outline-success). The item is visible and orderable on the customer menu.
+  </Card>
+  <Card title="NO HAY — out of stock" icon="circle-xmark">
+    The button is styled in red (btn-danger). The item is shown with 50% opacity, an "Agotado" badge, and the "Agregar" button is hidden so customers cannot add it to their order.
+  </Card>
+</CardGroup>
+
+## Toggling an item's availability
+
+Click any button in the inventory panel to flip that item's stock state.
+
+<Steps>
+  <Step title="Find the item in the panel">
+    Scroll to the CONTROL DE INVENTARIO section at the bottom of `/cocina` and locate the item you want to update.
+  </Step>
+  <Step title="Click the toggle button">
+    Clicking the button sends a `POST` request to `/toggle_disponibilidad` with the item's ID in the request body.
+  </Step>
+  <Step title="Server inverts the state">
+    The server looks up the item in the `inventario_stock` collection and sets `disponible` to the opposite of its current value.
+
+    ```python toggle logic
+    doc = inventario_col.find_one({"item_id": item_id})
+    nuevo_estado = not doc['disponible'] if doc else False
+    inventario_col.update_one(
+        {"item_id": item_id},
+        {"$set": {"disponible": nuevo_estado}},
+        upsert=True
+    )
+    ```
+  </Step>
+  <Step title="Customer menu updates automatically">
+    The customer-facing menu polls `/api/stock` every 10 seconds. When the next poll runs, the item's availability is updated without requiring a page reload.
+  </Step>
+</Steps>
+
+<Note>
+  If no record exists in `inventario_stock` for a given item — for example, the first time it is ever toggled — the server defaults to `False` (out of stock) rather than `True`. The item will appear unavailable after the first click. A second click will set it back to available.
+</Note>
+
+## How changes appear on the customer menu
+
+When an item is marked unavailable:
+
+- The item card is shown at 50% opacity.
+- An **Agotado** badge appears on the item.
+- The **Agregar** button is hidden so the item cannot be added to a cart.
+
+These changes take effect within 10 seconds as the customer menu polls for stock updates.
+
+## Best practices
+
+<Tip>
+  Mark items as unavailable **before** you run out of stock, not after. If a customer places an order for an item you no longer have, the order still comes through and must be handled manually. Proactive toggling prevents that situation.
+</Tip>
+
+<Note>
+  Inventory state is stored in MongoDB Atlas in the `inventario_stock` collection. Changes persist across server restarts — you do not need to re-toggle items each time the application restarts.
+</Note>

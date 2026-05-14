@@ -1,0 +1,96 @@
+---
+title: "Placing an order at Rendón Burgers"
+description: "Walk through adding items to the cart, filling in customer details at checkout, choosing a payment method, and submitting the order to the kitchen queue."
+---
+
+Placing an order at Rendón Burgers happens entirely on the customer menu page at `/`. You browse the menu, build a cart, fill in your contact and delivery details in a checkout modal, and submit the order. Once submitted, the order is inserted into the kitchen queue in MongoDB and a real-time progress tracker appears on screen.
+
+## Ordering steps
+
+<Steps>
+  <Step title="Add items to the cart">
+    Browse the menu and click **+ Agregar** on any item card to add it to your cart. A toast notification confirms the item was added. If you add the same item again, its quantity increments by one instead of creating a duplicate entry.
+  </Step>
+
+  <Step title="Adjust quantities">
+    Open the cart panel to review your selection. Use the **+** and **−** buttons next to each item to change its quantity. Clicking **×** removes the item from the cart entirely. The order total updates automatically as you make changes.
+  </Step>
+
+  <Step title="Open checkout">
+    Click **CONFIRMAR PEDIDO** to open the checkout modal. Your cart must contain at least one item before this button is available.
+  </Step>
+
+  <Step title="Fill in your details">
+    Complete the following fields in the checkout modal:
+
+    | Field | Description |
+    |-------|-------------|
+    | Name | Your full name |
+    | Phone number | Contact number for the order |
+    | Pickup type | **Recoger en Sucursal** (in-store pickup) or **A Domicilio** (home delivery) |
+    | Delivery address | Appears only when **A Domicilio** is selected |
+    | Payment method | **Efectivo** (cash) or **Tarjeta/Transferencia** (card or bank transfer) |
+  </Step>
+
+  <Step title="Submit the order">
+    Click **ENVIAR A COCINA** to submit your order. The form data and cart contents are sent to the `/ordenar` endpoint. After a successful response, the cart resets and the order progress tracker appears on screen.
+  </Step>
+</Steps>
+
+## Cart behavior
+
+Items in the cart are stored in a JavaScript array (`carrito`) in the browser session. Each entry holds the item name, unit price, quantity, and item ID:
+
+```javascript
+// Adding an item — increments quantity if the item is already in the cart
+function agregarAlCarrito(nombre, precio, id) {
+    const index = carrito.findIndex(i => i.item_id === id);
+    if (index > -1) {
+        carrito[index].cantidad++;
+    } else {
+        carrito.push({ nombre, precio, cantidad: 1, item_id: id });
+    }
+    actualizarCarritoUI();
+}
+
+// Adjusting quantity — removes the item if quantity reaches zero
+function cambiarCantidad(index, delta) {
+    carrito[index].cantidad += delta;
+    if (carrito[index].cantidad <= 0) {
+        eliminarDelCarrito(index);
+    } else {
+        actualizarCarritoUI();
+    }
+}
+```
+
+The cart total is recalculated and displayed on every change. There is no minimum order quantity.
+
+## Payment methods
+
+<CardGroup cols={2}>
+  <Card title="Efectivo" icon="money-bill">
+    Pay with cash at the time of pickup or delivery. No additional steps are required at checkout.
+  </Card>
+  <Card title="Tarjeta / Transferencia" icon="credit-card">
+    Simulates a card or bank transfer payment. A brief processing animation (approximately 2 seconds) plays before the order is submitted.
+  </Card>
+</CardGroup>
+
+## Delivery address
+
+The delivery address field in the checkout modal is conditional. It is only displayed when you select **A Domicilio** as the pickup type. If you select **Recoger en Sucursal**, the address field is hidden and the order is recorded without a delivery address.
+
+<Note>
+If no delivery address is provided (for in-store pickup orders), the address is stored as `N/A` in the database.
+</Note>
+
+## After submission
+
+Once the order is successfully submitted:
+
+- The cart is cleared and the total resets to zero.
+- A progress tracker appears on the page showing the numeric order ID assigned by the server.
+- The tracker begins polling the `/estado/{id}` endpoint every 5 seconds to reflect the kitchen's progress.
+
+See [Tracking your order](/customer/order-tracking) for details on how the progress tracker works.

@@ -1,0 +1,65 @@
+{
+  "projectType": "saas",
+  "projectName": "Rendón Burgers",
+  "projectDescription": "A full-stack web application for managing burger restaurant orders, kitchen workflow, inventory, and daily sales reporting.",
+  "theme": "almond",
+  "primaryColor": "#d90429",
+  "lightColor": "#ef233c",
+  "darkColor": "#8b0000",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": ["introduction", "quickstart", "deployment"]
+          },
+          {
+            "group": "Customer Experience",
+            "pages": ["customer/menu", "customer/ordering", "customer/order-tracking"]
+          },
+          {
+            "group": "Kitchen & Operations",
+            "pages": ["operations/kitchen-view", "operations/inventory", "operations/sales-report"]
+          },
+          {
+            "group": "Configuration",
+            "pages": ["configuration/mongodb-setup", "configuration/menu-items"]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Endpoints",
+            "pages": ["api/overview", "api/orders", "api/stock", "api/kitchen"]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Digital menu with 26 items across Hamburgers, Breakfasts, and Drinks categories",
+    "Real-time shopping cart with quantity management",
+    "Order placement with customer info, delivery type, and payment method",
+    "Live order tracking with progress bar (30% → 60% → 100%)",
+    "Kitchen dashboard showing active orders as printable tickets",
+    "Inventory toggle per item (available/out-of-stock) synced via MongoDB",
+    "Real-time stock sync every 10 seconds on the customer-facing menu",
+    "Daily sales report with total revenue and completed order details",
+    "Support for pickup (Sucursal) and home delivery (Domicilio)",
+    "Payment via cash (Efectivo) or bank transfer (Tarjeta)"
+  ],
+  "publicApiSurface": [
+    "GET / — Customer-facing menu page",
+    "GET /cocina — Kitchen dashboard with active orders and inventory control",
+    "GET /reporte — Daily sales report page",
+    "POST /ordenar — Place a new order",
+    "GET /estado/<pedido_id> — Check order status (preparando / listo / no_encontrado)",
+    "GET /api/stock — Get current inventory availability as JSON",
+    "POST /toggle_disponibilidad — Toggle item availability in inventory",
+    "POST /marcar_listo — Mark an order as completed and move to sales history"
+  ]
+}

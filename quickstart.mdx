@@ -1,81 +1,85 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
-icon: 'rocket'
+title: "Get started with Rendón Burgers"
+description: "Clone the repository, install Python dependencies, connect to MongoDB Atlas, and run the development server to have the app running locally in minutes."
 ---
 
-## Get started in three steps
+This guide walks you through setting up the Rendón Burgers application on your local machine. You will need Python 3.8 or later, `pip`, and a MongoDB Atlas account with a cluster already created.
 
-Get your documentation site running locally and make your first customization.
+## Steps
 
-### Step 1: Set up your local environment
+<Steps>
+  <Step title="Clone the repository">
+    Download the source code from GitHub:
 
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
+    ```bash
+    git clone https://github.com/EduCabrera-k/Menu_Hamburguesas
+    cd Menu_Hamburguesas
+    ```
+  </Step>
 
-### Step 2: Deploy your changes
+  <Step title="Install dependencies">
+    Install the required Python packages from `requirements.txt`:
 
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
+    ```bash
+    pip install -r requirements.txt
+    ```
 
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
+    This installs the following packages:
 
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
+    | Package | Purpose |
+    |---|---|
+    | `flask` | Web framework and routing |
+    | `pymongo` | MongoDB driver |
+    | `dnspython` | Required for `mongodb+srv://` URIs |
+    | `gunicorn` | Production WSGI server |
+  </Step>
 
-### Step 3: Go live
+  <Step title="Configure your MongoDB Atlas connection">
+    Open `app.py` and replace the placeholder value of `MONGO_URI` with your Atlas connection string:
 
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
+    ```python
+    MONGO_URI = "mongodb+srv://<user>:<password>@<cluster>/rendon_burger_db?appName=<app>"
+    client = MongoClient(MONGO_URI)
+    db = client['rendon_burger_db']
+    ```
 
-## Next steps
+    The application uses three collections inside `rendon_burger_db`: `pedidos_activos`, `historial_ventas`, and `inventario_stock`. These are created automatically on first use if they do not exist.
+  </Step>
 
-Now that you have your docs running, explore these key features:
+  <Step title="Start the development server">
+    Run the Flask development server:
 
-<CardGroup cols={2}>
+    ```bash
+    python app.py
+    ```
 
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
+    Flask starts on port 5000 with debug mode enabled. You will see output similar to:
 
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
+    ```
+    * Running on http://127.0.0.1:5000
+    * Debug mode: on
+    ```
+  </Step>
 
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
+  <Step title="Open the application">
+    Navigate to `http://localhost:5000` in your browser. You should see the customer-facing menu with items organized by category.
+  </Step>
+</Steps>
 
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
+<Info>
+The application has three views you can access directly:
 
-</CardGroup>
+- `/` — Customer menu (order placement)
+- `/cocina` — Kitchen dashboard (order queue management)
+- `/reporte` — Daily sales report
+</Info>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+<Tip>
+For production use, replace `python app.py` with Gunicorn:
+
+```bash
+gunicorn app:app
+```
+
+Gunicorn is a production-grade WSGI server that handles concurrent requests more reliably than the Flask development server. See the [deployment guide](/deployment) for full configuration options.
+</Tip>
